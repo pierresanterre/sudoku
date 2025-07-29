@@ -37,12 +37,12 @@ namespace sudoku
             Mask mask = cell.mask;
             if (mask.IsImpossible())
             {
-                WriteInColor("".PadLeft(core.digits.Length, 'X'), ConsoleColor.DarkRed);
+                WriteInColor(RepeatChar('X', core.digits.Length), ConsoleColor.DarkRed);
             }
             else if (mask.IsFixed())
             {
                 Digit digit = mask.FixedDigit();
-                WriteInColor("".PadLeft(core.digits.Length, digit.display), ConsoleColor.DarkGreen);
+                WriteInColor(RepeatChar(digit.display, core.digits.Length), ConsoleColor.DarkGreen);
             }
             else
             {
@@ -70,7 +70,7 @@ namespace sudoku
                 {
                     horizontalLine += " + ";
                 }
-                horizontalLine += "".PadLeft((core.numDigits * core.boxWidth) + (core.boxWidth -1), '-');
+                horizontalLine += RepeatChar('-', (core.numDigits * core.boxWidth) + (core.boxWidth -1));
             }
 
             for (int yOuter = 0; yOuter < core.boxWidth; yOuter++)

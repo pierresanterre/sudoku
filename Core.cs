@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Runtime.ExceptionServices;
@@ -32,6 +33,29 @@ namespace sudoku
         public readonly UI ui;
         public Cell[] cells;
 
+        public static string RepeatChar(char character, int length)
+        {
+            string result = "".PadLeft(length, character);
+            return result;
+        }
+
+        public static string ArrayToString<E>(E[] elememts) where E : class
+        {
+            string result = "[";
+            bool first = true;
+            foreach (E e in elememts)
+            {
+                if (!first)
+                {
+                    result += ",";
+                }
+                first = false;
+                result += e.ToString();
+            }
+            result += "]";
+            return result;
+        }
+
         char DigitToDisplay(int ordinal)
         {
             char result = digitsAsCharacters[ordinal];
@@ -53,6 +77,10 @@ namespace sudoku
             return ordinal;
         }
 
+        /// <summary>
+        /// A mask is the set of possible digits.
+        /// The key usage is by the cell structure, but we abstract the operations here.
+        /// </summary>
         public class Mask
         {
             private Core core;
@@ -108,20 +136,73 @@ namespace sudoku
                 RecomputeBitsInMask();
             }
 
-            public void MaskOff(Mask mask)
+            public bool MaskOff(Mask mask)
             {
-                bitmap = bitmap & ~mask.bitmap;
-                RecomputeBitsInMask();
+                long newBitmap = bitmap & ~mask.bitmap;
+                if (bitmap == newBitmap)
+                {
+                    return false;
+                }
+                else
+                {
+                    bitmap = newBitmap;
+                    RecomputeBitsInMask();
+                    return true;
+                }
             }
 
-            public void MaskOff(Digit digit)
+            public bool MaskOff(Digit digit)
             {
-                MaskOff(digit.mask);
+                bool result = MaskOff(digit.mask);
+                return result;
+            }
+
+            public bool MaskForOnly(Digit digit)
+            {
+                if (bitmap == digit.mask.bitmap)
+                {
+                    return false;
+                }
+                else
+                {
+                    bitmap = digit.mask.bitmap;
+                    RecomputeBitsInMask();
+                    return true;
+                }
             }
 
             public int NumPossibleDigits()
             {
                 return bitsInMask;
+            }
+
+            public override string ToString()
+            {
+                string result = string.Empty;
+                if (IsImpossible())
+                {
+                    result = RepeatChar('X', core.numDigits);
+                }
+                else if (IsFixed())
+                {
+                    Digit digit = FixedDigit();
+                    result = RepeatChar(digit.display, core.digits.Length);
+                }
+                else
+                {
+                    foreach (Digit digit in core.digits)
+                    {
+                        if (DigitPresent(digit))
+                        {
+                            result += digit.display;
+                        }
+                        else
+                        {
+                            result += " ";
+                        }
+                    }
+                }
+                return result;
             }
 
             public Mask(Core core, int ordinal)
@@ -151,6 +232,10 @@ namespace sudoku
             }
         }
 
+        /// <summary>
+        /// A digit is the abstraction for the symbol to display. It also has the mask
+        /// that represent that single digit.
+        /// </summary>
         public class Digit
         {
             private Core core;
@@ -163,6 +248,12 @@ namespace sudoku
                 display = core.DigitToDisplay(ordinal);
                 mask = new Mask(core, ordinal);
             }
+
+            public override string ToString()
+            {
+                string result = display.ToString();
+                return result;
+            }
         };
 
         public enum GroupType
@@ -172,6 +263,10 @@ namespace sudoku
             Box,
         };
 
+        /// <summary>
+        /// A group is the array of cells that are joined either
+        /// horizontally, vertically or in a box.
+        /// </summary>
         public class Group
         {
             public GroupType groupType;
@@ -183,6 +278,14 @@ namespace sudoku
                 this.groupType = groupType;
                 this.ordinal = ordinal;
                 this.cells = cells;
+            }
+
+            public override string ToString()
+            {
+                string result = $"{groupType.ToString()}({ordinal})=";
+                Mask[] masks = cells.Select(x => x.mask).ToArray();
+                result += ArrayToString(masks);
+                return result;
             }
         }
 
@@ -197,6 +300,12 @@ namespace sudoku
                 this.y = y;
                 this.display = display;
             }
+
+            public override string ToString()
+            {
+                string result = $"{x},{y} = {display}";
+                return result;
+            }
         }
 
         public class Cell
@@ -204,26 +313,67 @@ namespace sudoku
             public Mask mask;
             public int ordinal;
 
+            public void SetCell(Digit digit)
+            {
+                mask.MaskForOnly(digit);
+            }
+
             public Cell(Core core, int ordinal)
             {
                 mask = new Mask(core);
                 this.ordinal = ordinal;
             }
+
+            public override string ToString()
+            {
+                string result = $"{ordinal.ToString()}=";
+                result += mask.ToString();
+                return result;
+            }
+        }
+
+        private void SolveWithExceptions(InitialCellDigit[] initialCellDigits)
+        {
+            foreach (InitialCellDigit initialCellDigit in initialCellDigits)
+            {
+                int x = initialCellDigit.x - 1;
+                if (x < 0 || x >= numDigits)
+                {
+                    throw new Exception($"Invalid initial cell: {initialCellDigit}");
+                }
+                int y = initialCellDigit.y - 1;
+                if (y < 0 || y >= numDigits)
+                {
+                    throw new Exception($"Invalid initial cell: {initialCellDigit}");
+                }
+                int cellOrdinal = x + (y * numDigits);
+                int digitOrdinal = DisplayToOrdinal(initialCellDigit.display);
+                Digit digit = digits[digitOrdinal];
+                cells[cellOrdinal].SetCell(digit);
+            }
+            ui.Log("After initial cells", ConsoleColor.Green);
+            ui.FullUI(cells);
         }
 
         public void Solve(InitialCellDigit[] initialCellDigits)
         {
             ui.Log("Starting", ConsoleColor.Green);
             ui.FullUI(cells);
-            foreach (InitialCellDigit initialCellDigit in initialCellDigits)
+            if (Debugger.IsAttached)
             {
-                int cellOrdinal = initialCellDigit.x + (initialCellDigit.y * numDigits);
-                int digitOrdinal = DisplayToOrdinal(initialCellDigit.display);
-                Digit digit = digits[digitOrdinal];
-                cells[cellOrdinal].mask.MaskOff(digit);
+                SolveWithExceptions(initialCellDigits);
             }
-            ui.Log("After initial cells", ConsoleColor.Green);
-            ui.FullUI(cells);
+            else
+            {
+                try
+                {
+                    SolveWithExceptions(initialCellDigits);
+                }
+                catch (Exception exception)
+                {
+                    ui.Log($"Exception: {exception.Message}", ConsoleColor.DarkRed);
+                }
+            }
         }
 
         public Core(int boxWidthParam, int boxHeightParam)
