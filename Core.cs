@@ -11,7 +11,7 @@ using static sudoku.Core;
 
 namespace sudoku
 {
-    public class Core
+    public partial class Core
     {
         public abstract class UI
         {
@@ -46,6 +46,17 @@ namespace sudoku
             {
                 return "VoidClass";
             }
+        }
+
+        /// <summary>
+        /// Given an enum type E, return its number of elements
+        /// </summary>
+        /// <typeparam name="E"></typeparam>
+        /// <returns></returns>
+        public static int CountOfEnum<E>()
+        {
+            int result = Enum.GetValues(typeof(E)).Length;
+            return result;
         }
 
         /// <summary>
@@ -305,8 +316,22 @@ namespace sudoku
         {
             Row,
             Column,
-            Box,
+            Box
         };
+
+        public class GroupElement
+        {
+            public GroupType groupType;
+            public int groupOrdinal;
+            public int inGroupOrdinal;
+
+            public GroupElement(GroupType groupType, int groupOrdinal, int inGroupOrdinal)
+            {
+                this.groupType = groupType;
+                this.groupOrdinal = groupOrdinal;
+                this.inGroupOrdinal = inGroupOrdinal;
+            }
+        }
 
         /// <summary>
         /// A group is the array of cells that are joined either
@@ -336,8 +361,10 @@ namespace sudoku
 
         public class Cell
         {
+            public Core core;
             public Mask mask;
             public int ordinal;
+            public GroupElement[] groupOrdinals = new GroupElement[sizeof(GroupType)];
 
             public void SetCell(Digit digit)
             {
@@ -346,146 +373,32 @@ namespace sudoku
 
             public Cell(Core core, int ordinal)
             {
-                mask = new Mask(core);
+                this.core = core;
                 this.ordinal = ordinal;
+                mask = new Mask(core);
+                int x = ordinal % core.numDigits;
+                int y = ordinal / core.numDigits;
+                groupOrdinals[(int)GroupType.Row] = new GroupElement(GroupType.Row, y, x);
+                groupOrdinals[(int)GroupType.Column] = new GroupElement(GroupType.Column, x, y);
+                int boxX = (int)(x / core.boxWidth);
+                int boxY = (int)(y / core.boxHeight);
+                int boxXOffset = x % core.boxWidth;
+                int boxYOffset = y % core.boxHeight;
+                groupOrdinals[(int)GroupType.Box] = new GroupElement(GroupType.Box, boxX + boxY * core.boxWidth, boxXOffset + boxYOffset * core.boxWidth);
             }
 
             public override string ToString()
             {
                 string result = $"{ordinal.ToString()}=";
                 result += mask.ToString();
+                int countGroupType = CountOfEnum<GroupType>();
+                for (int i = 0; i < countGroupType; i++)
+                {
+                    GroupType groupType = (GroupType)i;
+                    result += $", {groupType}[{groupOrdinals[i].groupOrdinal},{groupOrdinals[i].inGroupOrdinal}]";
+                }
                 return result;
             }
-        }
-
-        public class InternalInitialCellDigit
-        {
-            public int ordinal;
-            public Digit digit;
-
-            public InternalInitialCellDigit(Core core, int cellOrdinal, char display)
-            {
-                ordinal = cellOrdinal;
-                int digitOrdinal = core.DisplayToOrdinal(display);
-                Digit digit = core.digits[digitOrdinal];
-                this.digit = digit;
-            }
-
-            public override string ToString()
-            {
-                string result = $"{ordinal}={digit}";
-                return result;
-            }
-        }
-
-        public class InitialCellDigit
-        {
-            public int x;
-            public int y;
-            public char display;
-
-            public InternalInitialCellDigit ToInternalInitialCellDigit(Core core)
-            {
-                x = x - 1;
-                if (x < 0 || x >= core.numDigits)
-                {
-                    throw new Exception($"Invalid initial cell: {this}");
-                }
-                y = y - 1;
-                if (y < 0 || y >= core.numDigits)
-                {
-                    throw new Exception($"Invalid initial cell: {this}");
-                }
-                int cellOrdinal = x + (y * core.numDigits);
-                InternalInitialCellDigit result = new InternalInitialCellDigit(core, cellOrdinal, display);
-                return result;
-            }
-
-            public InitialCellDigit(int x, int y, char display)
-            {
-                this.x = x;
-                this.y = y;
-                this.display = display;
-            }
-
-            public override string ToString()
-            {
-                string result = $"{x},{y} = {display}";
-                return result;
-            }
-        }
-
-        internal InternalInitialCellDigit[] StringsToInternalInitialCellDigits(Core core, string[] lines)
-        {
-            List<InternalInitialCellDigit> internalInitialCellDigits = new List<InternalInitialCellDigit>();
-            if (lines.Length != numDigits)
-            {
-                throw new Exception($"We must have {numDigits} initialization strings, not {lines.Length}");
-            }
-
-            for (int i = 0; i < numDigits; i++)
-            {
-                string line = lines[i];
-                if (line.Length != numDigits)
-                {
-                    throw new Exception($"Initialization strings must have length {numDigits}, not {line.Length} on line {i}: {line}");
-                }
-                for (int j = 0; j < numDigits; j++)
-                {
-                    if (line[j] != ' ')
-                    {
-                        internalInitialCellDigits.Add(new InternalInitialCellDigit(core, (i * numDigits) + j, line[j]));
-                    }
-                }
-            }
-
-            InternalInitialCellDigit[] result = internalInitialCellDigits.ToArray();
-            return result;
-        }
-
-        private bool SolveWithExceptions(InternalInitialCellDigit[] internalInitialCellDigits)
-        {
-            ui.Log("Starting", ConsoleColor.Green);
-            ui.FullUI(cells);
-            foreach (InternalInitialCellDigit internalInitialCellDigit in internalInitialCellDigits)
-            { 
-                cells[internalInitialCellDigit.ordinal].SetCell(internalInitialCellDigit.digit);
-            }
-            ui.Log("After initial cells", ConsoleColor.Green);
-            ui.FullUI(cells);
-            return true;
-        }
-
-        public bool Solve(InitialCellDigit[] initialCellDigits)
-        {
-            bool result = BreakWithDebugger(() => {
-                InternalInitialCellDigit[] internalInitialCellDigits = initialCellDigits.Select(x => x.ToInternalInitialCellDigit(this)).ToArray();
-                bool exceptionResult = SolveWithExceptions(internalInitialCellDigits);
-                return exceptionResult;
-            }
-            , (exception) =>
-            {
-                ui.Log($"Exception: {exception.Message}", ConsoleColor.DarkRed);
-                return false;
-            });
-
-            return result;
-        }
-
-        public bool Solve(string[] lines)
-        {
-            bool result = BreakWithDebugger(() => {
-                InternalInitialCellDigit[] internalInitialCellDigits = StringsToInternalInitialCellDigits(this, lines);
-                bool exceptionResult = SolveWithExceptions(internalInitialCellDigits);
-                return exceptionResult;
-            }
-            , (exception) =>
-            {
-                ui.Log($"Exception: {exception.Message}", ConsoleColor.DarkRed);
-                return false;
-            });
-
-            return result;
         }
 
         public Core(int boxWidthParam, int boxHeightParam)
