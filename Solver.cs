@@ -8,15 +8,30 @@ namespace sudoku
 {
     public partial class Puzzle
     {
-        public bool SetCell(int ordinal, Digit digit)
+        public bool SetCell(int cellOrdinal, Digit digit)
         {
-            if (cells[ordinal].mask == digit.mask)
+            Cell cell = cells[cellOrdinal];
+            if (cell.mask == digit.mask)
             {
                 return false;
             }
             else
             {
-                cells[ordinal].SetCell(digit);
+                cell.SetCell(digit);
+                ui.FullUI(cells);
+                for (int groupTypeIndex = 0; groupTypeIndex  < countGroupTypes; groupTypeIndex++)
+                {
+                    GroupElement groupElement = cell.groupOrdinals[groupTypeIndex];
+                    Group group = groups[groupTypeIndex, groupElement.groupOrdinal];
+                    for (int i = 0; i < numDigits; i++)
+                    {
+                        if (i != groupElement.inGroupOrdinal)
+                        {
+                            group.cells[i].mask.MaskOff(digit);
+                        }
+                    }
+                }
+                ui.FullUI(cells);
                 return true;
             }
         }
