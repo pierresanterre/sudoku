@@ -33,6 +33,8 @@ namespace sudoku
         public readonly int countGroupTypes;
         public Cell[] cells;
         public Group[,] groups;
+        public int digitsUnknown;
+        public bool? success = null;
 
         /// <summary>
         /// Class used to be able to pass a void method as a Func
@@ -403,6 +405,14 @@ namespace sudoku
                 }
             }
 
+            public string At()
+            {
+                int x = ordinal % puzzle.numDigits;
+                int y = ordinal / puzzle.numDigits;
+                string result = $"[{x + 1},{y + 1}]";
+                return result;
+            }
+
             public override string ToString()
             {
                 string result = $"{ordinal.ToString()}=";
@@ -422,6 +432,7 @@ namespace sudoku
             boxWidth = boxWidthParam;
             boxHeight = boxHeightParam;
             numDigits = boxHeight * boxWidth;
+            digitsUnknown = numDigits * numDigits;
 
             digits = new Digit[numDigits];
             for (int i = 0; i < numDigits; i++)
@@ -450,6 +461,11 @@ namespace sudoku
             }
 
             ui = new UIConsole(puzzle);
+        }
+        public override string ToString()
+        {
+            string result = $"{boxWidth}x{boxHeight} with {digitsUnknown} unknown";
+            return result;
         }
     }
 }
