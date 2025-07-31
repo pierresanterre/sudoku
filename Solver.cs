@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static sudoku.Core;
 
 namespace sudoku
 {
-    public partial class Core
+    public partial class Puzzle
     {
         public bool SetCell(int ordinal, Digit digit)
         {
@@ -27,11 +26,11 @@ namespace sudoku
             public int ordinal;
             public Digit digit;
 
-            public InternalInitialCellDigit(Core core, int cellOrdinal, char display)
+            public InternalInitialCellDigit(Puzzle puzzle, int cellOrdinal, char display)
             {
                 ordinal = cellOrdinal;
-                int digitOrdinal = core.DisplayToOrdinal(display);
-                Digit digit = core.digits[digitOrdinal];
+                int digitOrdinal = puzzle.DisplayToOrdinal(display);
+                Digit digit = puzzle.digits[digitOrdinal];
                 this.digit = digit;
             }
 

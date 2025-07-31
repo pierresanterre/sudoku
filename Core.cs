@@ -7,20 +7,19 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using static sudoku.Core;
 
 namespace sudoku
 {
-    public partial class Core
+    public partial class Puzzle
     {
         public abstract class UI
         {
-            protected Core core;
+            protected Puzzle puzzle;
             public abstract void Log(string text, ConsoleColor consoleColor);
             public abstract void FullUI(Cell[] cells);
-            protected UI(Core core)
+            protected UI(Puzzle puzzle)
             {
-                this.core = core;
+                this.puzzle = puzzle;
             }
         }
 
@@ -141,14 +140,14 @@ namespace sudoku
         /// </summary>
         public class Mask
         {
-            private Core core;
+            private Puzzle puzzle;
             private long bitmap;
             private int bitsInMask;
 
             private void RecomputeBitsInMask()
             {
                 bitsInMask = 0;
-                for (int i = 0; i < core.numDigits; i++)
+                for (int i = 0; i < puzzle.numDigits; i++)
                 {
                     if ((bitmap & (1 << i)) != 0)
                     {
@@ -171,11 +170,11 @@ namespace sudoku
 
             public Digit FixedDigit()
             {
-                for (int i = 0; i < core.numDigits; i++)
+                for (int i = 0; i < puzzle.numDigits; i++)
                 {
                     if ((bitmap & (1 << i)) != 0)
                     {
-                        return core.digits[i];
+                        return puzzle.digits[i];
                     }
                 }
 
@@ -239,16 +238,16 @@ namespace sudoku
                 string result = string.Empty;
                 if (IsImpossible())
                 {
-                    result = RepeatChar('X', core.numDigits);
+                    result = RepeatChar('X', puzzle.numDigits);
                 }
                 else if (IsFixed())
                 {
                     Digit digit = FixedDigit();
-                    result = RepeatChar(digit.display, core.digits.Length);
+                    result = RepeatChar(digit.display, puzzle.digits.Length);
                 }
                 else
                 {
-                    foreach (Digit digit in core.digits)
+                    foreach (Digit digit in puzzle.digits)
                     {
                         if (DigitPresent(digit))
                         {
@@ -263,30 +262,30 @@ namespace sudoku
                 return result;
             }
 
-            public Mask(Core core, int ordinal)
+            public Mask(Puzzle puzzle, int ordinal)
             {
-                this.core = core;
+                this.puzzle = puzzle;
                 bitmap = 1 << ordinal;
                 bitsInMask = 1;
             }
 
-            public Mask(Core core)
+            public Mask(Puzzle puzzle)
             {
-                this.core = core;
-                if (core.numDigits > 64)
+                this.puzzle = puzzle;
+                if (puzzle.numDigits > 64)
                 {
                     throw new Exception("Maximum is 64 digits");
                 }
 
-                if (core.numDigits == 64)
+                if (puzzle.numDigits == 64)
                 {
                     bitmap = Int64.MaxValue;
                 }
                 else
                 {
-                    bitmap = (1 << core.numDigits) - 1;
+                    bitmap = (1 << puzzle.numDigits) - 1;
                 }
-                bitsInMask = core.numDigits;
+                bitsInMask = puzzle.numDigits;
             }
         }
 
@@ -296,15 +295,15 @@ namespace sudoku
         /// </summary>
         public class Digit
         {
-            private Core core;
+            private Puzzle puzzle;
             public char display;
             public Mask mask;
 
-            public Digit(Core core, int ordinal)
+            public Digit(Puzzle puzzle, int ordinal)
             {
-                this.core = core;
-                display = core.DigitToDisplay(ordinal);
-                mask = new Mask(core, ordinal);
+                this.puzzle = puzzle;
+                display = puzzle.DigitToDisplay(ordinal);
+                mask = new Mask(puzzle, ordinal);
             }
 
             public override string ToString()
@@ -347,17 +346,17 @@ namespace sudoku
         /// </summary>
         public class Group
         {
-            public Core core;
+            public Puzzle puzzle;
             public GroupType groupType;
             public int ordinal;
             public Cell[] cells;
 
-            public Group(Core core, GroupType groupType, int ordinal)
+            public Group(Puzzle puzzle, GroupType groupType, int ordinal)
             {
-                this.core = core;
+                this.puzzle = puzzle;
                 this.groupType = groupType;
                 this.ordinal = ordinal;
-                cells = new Cell[core.numDigits];
+                cells = new Cell[puzzle.numDigits];
             }
 
             public override string ToString()
@@ -371,7 +370,7 @@ namespace sudoku
 
         public class Cell
         {
-            public Core core;
+            public Puzzle puzzle;
             public Mask mask;
             public int ordinal;
             public GroupElement[] groupOrdinals = new GroupElement[sizeof(GroupType)];
@@ -381,26 +380,26 @@ namespace sudoku
                 mask.MaskForOnly(digit);
             }
 
-            public Cell(Core core, int ordinal)
+            public Cell(Puzzle puzzle, int ordinal)
             {
-                this.core = core;
+                this.puzzle = puzzle;
                 this.ordinal = ordinal;
-                mask = new Mask(core);
+                mask = new Mask(puzzle);
 
-                int x = ordinal % core.numDigits;
-                int y = ordinal / core.numDigits;
+                int x = ordinal % puzzle.numDigits;
+                int y = ordinal / puzzle.numDigits;
                 groupOrdinals[(int)GroupType.Row] = new GroupElement(GroupType.Row, y, x);
                 groupOrdinals[(int)GroupType.Column] = new GroupElement(GroupType.Column, x, y);
-                int boxX = (int)(x / core.boxWidth);
-                int boxY = (int)(y / core.boxHeight);
-                int boxXOffset = x % core.boxWidth;
-                int boxYOffset = y % core.boxHeight;
-                groupOrdinals[(int)GroupType.Box] = new GroupElement(GroupType.Box, boxX + boxY * core.boxHeight, boxXOffset + boxYOffset * core.boxWidth);
+                int boxX = (int)(x / puzzle.boxWidth);
+                int boxY = (int)(y / puzzle.boxHeight);
+                int boxXOffset = x % puzzle.boxWidth;
+                int boxYOffset = y % puzzle.boxHeight;
+                groupOrdinals[(int)GroupType.Box] = new GroupElement(GroupType.Box, boxX + boxY * puzzle.boxHeight, boxXOffset + boxYOffset * puzzle.boxWidth);
 
-                for (int i = 0; i < core.countGroupTypes; i++)
+                for (int i = 0; i < puzzle.countGroupTypes; i++)
                 {
                     GroupElement groupElement = groupOrdinals[i];
-                    core.groups[i, groupElement.groupOrdinal].cells[groupElement.inGroupOrdinal] = this;
+                    puzzle.groups[i, groupElement.groupOrdinal].cells[groupElement.inGroupOrdinal] = this;
                 }
             }
 
@@ -408,7 +407,7 @@ namespace sudoku
             {
                 string result = $"{ordinal.ToString()}=";
                 result += mask.ToString();
-                for (int i = 0; i < core.countGroupTypes; i++)
+                for (int i = 0; i < puzzle.countGroupTypes; i++)
                 {
                     GroupType groupType = (GroupType)i;
                     result += $", {groupType}[{groupOrdinals[i].groupOrdinal},{groupOrdinals[i].inGroupOrdinal}]";
@@ -417,9 +416,9 @@ namespace sudoku
             }
         }
 
-        public Core(int boxWidthParam, int boxHeightParam)
+        public Puzzle(int boxWidthParam, int boxHeightParam)
         {
-            Core core = this;
+            Puzzle puzzle = this;
             boxWidth = boxWidthParam;
             boxHeight = boxHeightParam;
             numDigits = boxHeight * boxWidth;
@@ -427,7 +426,7 @@ namespace sudoku
             digits = new Digit[numDigits];
             for (int i = 0; i < numDigits; i++)
             {
-                digits[i] = new Digit(core, i);
+                digits[i] = new Digit(puzzle, i);
             }
 
             //
@@ -440,17 +439,17 @@ namespace sudoku
             {
                 for (int j = 0; j < numDigits; j++)
                 {
-                    groups[i, j] = new Group(core, (GroupType)i, j);
+                    groups[i, j] = new Group(puzzle, (GroupType)i, j);
                 }
             }
 
             cells = new Cell[numDigits * numDigits];
             for (int i = 0; i < numDigits * numDigits; i++)
             {
-                cells[i] = new Cell(core, i);
+                cells[i] = new Cell(puzzle, i);
             }
 
-            ui = new UIConsole(core);
+            ui = new UIConsole(puzzle);
         }
     }
 }

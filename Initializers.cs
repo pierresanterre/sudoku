@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace sudoku
 {
-    public partial class Core
+    public partial class Puzzle
     {
         public class InitialCellDigit
         {
@@ -14,20 +14,20 @@ namespace sudoku
             public int y;
             public char display;
 
-            public InternalInitialCellDigit ToInternalInitialCellDigit(Core core)
+            public InternalInitialCellDigit ToInternalInitialCellDigit(Puzzle puzzle)
             {
                 x = x - 1;
-                if (x < 0 || x >= core.numDigits)
+                if (x < 0 || x >= puzzle.numDigits)
                 {
                     throw new Exception($"Invalid initial cell: {this}");
                 }
                 y = y - 1;
-                if (y < 0 || y >= core.numDigits)
+                if (y < 0 || y >= puzzle.numDigits)
                 {
                     throw new Exception($"Invalid initial cell: {this}");
                 }
-                int cellOrdinal = x + (y * core.numDigits);
-                InternalInitialCellDigit result = new InternalInitialCellDigit(core, cellOrdinal, display);
+                int cellOrdinal = x + (y * puzzle.numDigits);
+                InternalInitialCellDigit result = new InternalInitialCellDigit(puzzle, cellOrdinal, display);
                 return result;
             }
 
@@ -45,7 +45,7 @@ namespace sudoku
             }
         }
 
-        internal InternalInitialCellDigit[] StringsToInternalInitialCellDigits(Core core, string[] lines)
+        internal InternalInitialCellDigit[] StringsToInternalInitialCellDigits(Puzzle puzzle, string[] lines)
         {
             List<InternalInitialCellDigit> internalInitialCellDigits = new List<InternalInitialCellDigit>();
             if (lines.Length != numDigits)
@@ -64,7 +64,7 @@ namespace sudoku
                 {
                     if (line[j] != ' ')
                     {
-                        internalInitialCellDigits.Add(new InternalInitialCellDigit(core, (i * numDigits) + j, line[j]));
+                        internalInitialCellDigits.Add(new InternalInitialCellDigit(puzzle, (i * numDigits) + j, line[j]));
                     }
                 }
             }
