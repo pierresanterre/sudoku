@@ -31,7 +31,9 @@ namespace sudoku
         public readonly int numDigits;
         public readonly Digit[] digits;
         public readonly UI ui;
+        public readonly int countGroupTypes;
         public Cell[] cells;
+        public Group[,] groups;
 
         /// <summary>
         /// Class used to be able to pass a void method as a Func
@@ -331,6 +333,12 @@ namespace sudoku
                 this.groupOrdinal = groupOrdinal;
                 this.inGroupOrdinal = inGroupOrdinal;
             }
+
+            public override string ToString()
+            {
+                string result = $"{groupType}[{groupOrdinal},{inGroupOrdinal}]";
+                return result;
+            }
         }
 
         /// <summary>
@@ -339,15 +347,17 @@ namespace sudoku
         /// </summary>
         public class Group
         {
+            public Core core;
             public GroupType groupType;
             public int ordinal;
             public Cell[] cells;
 
-            public Group(GroupType groupType, int ordinal, Cell[] cells)
+            public Group(Core core, GroupType groupType, int ordinal)
             {
+                this.core = core;
                 this.groupType = groupType;
                 this.ordinal = ordinal;
-                this.cells = cells;
+                cells = new Cell[core.numDigits];
             }
 
             public override string ToString()
@@ -376,6 +386,7 @@ namespace sudoku
                 this.core = core;
                 this.ordinal = ordinal;
                 mask = new Mask(core);
+
                 int x = ordinal % core.numDigits;
                 int y = ordinal / core.numDigits;
                 groupOrdinals[(int)GroupType.Row] = new GroupElement(GroupType.Row, y, x);
@@ -384,15 +395,20 @@ namespace sudoku
                 int boxY = (int)(y / core.boxHeight);
                 int boxXOffset = x % core.boxWidth;
                 int boxYOffset = y % core.boxHeight;
-                groupOrdinals[(int)GroupType.Box] = new GroupElement(GroupType.Box, boxX + boxY * core.boxWidth, boxXOffset + boxYOffset * core.boxWidth);
+                groupOrdinals[(int)GroupType.Box] = new GroupElement(GroupType.Box, boxX + boxY * core.boxHeight, boxXOffset + boxYOffset * core.boxWidth);
+
+                for (int i = 0; i < core.countGroupTypes; i++)
+                {
+                    GroupElement groupElement = groupOrdinals[i];
+                    core.groups[i, groupElement.groupOrdinal].cells[groupElement.inGroupOrdinal] = this;
+                }
             }
 
             public override string ToString()
             {
                 string result = $"{ordinal.ToString()}=";
                 result += mask.ToString();
-                int countGroupType = CountOfEnum<GroupType>();
-                for (int i = 0; i < countGroupType; i++)
+                for (int i = 0; i < core.countGroupTypes; i++)
                 {
                     GroupType groupType = (GroupType)i;
                     result += $", {groupType}[{groupOrdinals[i].groupOrdinal},{groupOrdinals[i].inGroupOrdinal}]";
@@ -412,6 +428,20 @@ namespace sudoku
             for (int i = 0; i < numDigits; i++)
             {
                 digits[i] = new Digit(core, i);
+            }
+
+            //
+            // WARNING: Groups' construction must be done before cell.
+            // Cell constructor will set the cell values in the group.
+            //
+            countGroupTypes = CountOfEnum<GroupType>();
+            groups = new Group[countGroupTypes, numDigits];
+            for (int i = 0; i < countGroupTypes; i++)
+            {
+                for (int j = 0; j < numDigits; j++)
+                {
+                    groups[i, j] = new Group(core, (GroupType)i, j);
+                }
             }
 
             cells = new Cell[numDigits * numDigits];
