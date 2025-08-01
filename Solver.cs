@@ -6,14 +6,22 @@ using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using static sudoku.Puzzle;
 
 namespace sudoku
 {
     public partial class Puzzle
     {
-        public bool SetCell(int cellOrdinal, Digit digit)
+        /// <summary>
+        /// We are give a cellOrdinal with its now know digit.
+        /// 1) Set the digit in the puzzle and display the new puzzle
+        /// 2) Process all groups this cell is in with masking off the digit. Recurse if that makes cells with unique mask.
+        /// </summary>
+        /// <param name="cellOrdinal"></param>
+        /// <param name="digit"></param>
+        /// <returns>true if and only if we set a cell. False if no change or the puzzle is now complete</returns>
+        private bool SetCell(int cellOrdinal, Digit digit)
         {
+            bool result = false;
             Cell cell = cells[cellOrdinal];
             if (cell.mask == digit.mask)
             {
@@ -46,6 +54,7 @@ namespace sudoku
                             Mask newMask = newCell.mask;
                             if (newMask.MaskOff(digit))
                             {
+                                group.maskLeft.MaskOff(digit);
                                 if (newMask.IsImpossible())
                                 {
                                     success = false;
@@ -56,13 +65,33 @@ namespace sudoku
                                     Digit newFixedDigit = newMask.FixedDigit();
                                     ui.Log($"From cell{cell.At()} being {digit}, we can now deduce cell{newCell.At()} is {newFixedDigit}", ConsoleColor.Green);
                                     SetCell(newCell.ordinal, newFixedDigit);
+                                    result = true;
                                 }
                             }
                         }
                     }
                 }
-                return true;
+                return result;
             }
+        }
+
+        private bool SimplifyGroup(Group group)
+        {
+            return false;
+        }
+
+        private bool Simplify()
+        {
+            bool result = false;
+            for (int groupTypeIndex = 0; groupTypeIndex < countGroupTypes; groupTypeIndex++)
+            {
+                for (int i = 0; i < numDigits; i++)
+                {
+                    result |= SimplifyGroup(groups[groupTypeIndex, i]);
+                }
+            }
+
+            return result;
         }
 
         public class InternalInitialCellDigit
@@ -96,6 +125,10 @@ namespace sudoku
             }
             ui.Log("After initial cells", ConsoleColor.Green);
             ui.FullUI(cells);
+            if (!success.HasValue)
+            {
+                Simplify();
+            }
             if (!success.HasValue)
             {
                 ui.Log("Not solved", ConsoleColor.Red);

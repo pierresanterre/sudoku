@@ -352,6 +352,7 @@ namespace sudoku
             public GroupType groupType;
             public int ordinal;
             public Cell[] cells;
+            public Mask maskLeft;
 
             public Group(Puzzle puzzle, GroupType groupType, int ordinal)
             {
@@ -359,6 +360,7 @@ namespace sudoku
                 this.groupType = groupType;
                 this.ordinal = ordinal;
                 cells = new Cell[puzzle.numDigits];
+                maskLeft = new Mask(puzzle);
             }
 
             public override string ToString()
@@ -366,6 +368,7 @@ namespace sudoku
                 string result = $"{groupType.ToString()}({ordinal})=";
                 IEnumerable<Mask> masks = cells.Select(x => x.mask);
                 result += IEnumerableToString(masks);
+                result += $":{maskLeft}";
                 return result;
             }
         }
