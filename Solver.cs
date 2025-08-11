@@ -123,6 +123,9 @@ namespace sudoku
                 ui.Log($"From initial condition, cell{cells[internalInitialCellDigit.ordinal].At()} is {internalInitialCellDigit.digit}", ConsoleColor.Green);
                 SetCell(internalInitialCellDigit.ordinal, internalInitialCellDigit.digit);
             }
+            ui.Log("", ConsoleColor.Green);
+            ui.Log("", ConsoleColor.Green);
+            ui.Log("", ConsoleColor.Green);
             ui.Log("After initial cells", ConsoleColor.Green);
             ui.FullUI(cells);
             if (!success.HasValue)
