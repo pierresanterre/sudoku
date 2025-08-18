@@ -5,7 +5,7 @@
         public static int Main(string[] args)
         {
             Puzzle puzzle;
-
+            string[] solution;
 /*
             // Seattle Times Comics 7/27/2025
             puzzle = new Puzzle(3, 2);
@@ -35,7 +35,7 @@
                     "1    3",
                 ]);
 
-            string[] solution =
+            solution =
                 [
                     "624135",
                     "513246",
@@ -86,7 +86,7 @@
                     "5  2  ",
                 ]);
 
-            string[] solution =
+            solution =
                 [
                     "125463",
                     "346125",
@@ -95,7 +95,6 @@
                     "231546",
                     "564231",
                 ];
-*/
 
             // Seattle Times 8/10/2025
             puzzle = new Puzzle(3, 3);
@@ -111,6 +110,58 @@
                     " 6  71   ",
                     "7    2   ",
                 ]);
+*/
+
+            // Seattle Times Comics 8/17/2025
+            puzzle = new Puzzle(3, 2);
+            puzzle.Solve(
+                [
+                    "     1",
+                    "31 6  ",
+                    "   5  ",
+                    "  2   ",
+                    "  3 14",
+                    "2     ",
+                ]);
+
+            solution =
+                [
+                    "625431",
+                    "314625",
+                    "136542",
+                    "452163",
+                    "563214",
+                    "241356",
+                ];
+
+
+            // Seattle Times 8/17/2025
+            puzzle = new Puzzle(3, 3);
+            puzzle.Solve(
+                [
+                    " 1  62 7 ",
+                    "6   7    ",
+                    " 85     3",
+                    "  9 317  ",
+                    "2   5   9",
+                    "  829 1  ",
+                    "1     23 ",
+                    "    4   5",
+                    " 3 62  1 ",
+                ]);
+
+            solution =
+                [
+                    "913562478",
+                    "642378591",
+                    "785914623",
+                    "469831752",
+                    "271456389",
+                    "358297146",
+                    "196785234",
+                    "827143965",
+                    "534629817",
+                ];
 
             return 0;
         }
