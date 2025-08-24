@@ -4,28 +4,14 @@
     {
         public static int Main(string[] args)
         {
+            string puzzleName;
             Puzzle puzzle;
-            string[] solution;
-/*
-            // Seattle Times Comics 7/27/2025
-            puzzle = new Puzzle(3, 2);
-            Puzzle.InitialCellDigit[] initialCellDigits =
-            [
-                new Puzzle.InitialCellDigit(1, 1, '6'),
-                new Puzzle.InitialCellDigit(6, 1, '5'),
-                new Puzzle.InitialCellDigit(3, 2, '3'),
-                new Puzzle.InitialCellDigit(4, 2, '2'),
-                new Puzzle.InitialCellDigit(3, 3, '1'),
-                new Puzzle.InitialCellDigit(4, 4, '4'),
-                new Puzzle.InitialCellDigit(3, 5, '2'),
-                new Puzzle.InitialCellDigit(4, 5, '5'),
-                new Puzzle.InitialCellDigit(1, 6, '1'),
-                new Puzzle.InitialCellDigit(6, 6, '3'),
-            ];
-            puzzle.Solve(initialCellDigits);
+            Puzzle.Solution solution;
+            Puzzle.Solution expectedSolution;
 
+            puzzleName = "Seattle Times Comics 7/27/2025";
             puzzle = new Puzzle(3, 2);
-            puzzle.Solve(
+            solution = puzzle.Solve(
                 [
                     "6    5",
                     "  32  ",
@@ -34,8 +20,7 @@
                     "  25  ",
                     "1    3",
                 ]);
-
-            solution =
+            expectedSolution = new Puzzle.Solution(true,
                 [
                     "624135",
                     "513246",
@@ -43,10 +28,12 @@
                     "236451",
                     "362514",
                     "145623",
-                ];
+                ]);
+            solution.Verify(puzzleName, expectedSolution);
 
-            // Seattle Times 7/27/2025
+            puzzleName = "Seattle Times 7/27/2025";
             puzzle = new Puzzle(3, 3);
+            /*
             puzzle.Solve(
                 [
                     "6    51  ",
@@ -59,9 +46,9 @@
                     "  6257   ",
                     "  43    2",
                 ]);
-
-            puzzle = new Puzzle(3, 3);
-            puzzle.Solve(
+            */
+            // Simplified
+            solution = puzzle.Solve(
                 [
                     "6  9 51  ",
                     "   8149  ",
@@ -73,10 +60,12 @@
                     "  6257   ",
                     "  43    2",
                 ]);
+            // TO SOLVE
 
-            // Seattle Times Comics 8/10/2025
+
+            puzzleName = "Seattle Times Comics 8/10/2025";
             puzzle = new Puzzle(3, 2);
-            puzzle.Solve(
+            solution = puzzle.Solve(
                 [
                     "  5  3",
                     " 4  2 ",
@@ -85,8 +74,7 @@
                     " 3  4 ",
                     "5  2  ",
                 ]);
-
-            solution =
+            expectedSolution = new Puzzle.Solution(true,
                 [
                     "125463",
                     "346125",
@@ -94,9 +82,10 @@
                     "652314",
                     "231546",
                     "564231",
-                ];
+                ]);
+            solution.Verify(puzzleName, expectedSolution);
 
-            // Seattle Times 8/10/2025
+            puzzleName = "Seattle Times 8/10/2025";
             puzzle = new Puzzle(3, 3);
             puzzle.Solve(
                 [
@@ -110,11 +99,11 @@
                     " 6  71   ",
                     "7    2   ",
                 ]);
-*/
+            // TO SOLVE
 
-            // Seattle Times Comics 8/17/2025
+            puzzleName = "Seattle Times Comics 8/17/2025";
             puzzle = new Puzzle(3, 2);
-            puzzle.Solve(
+            solution = puzzle.Solve(
                 [
                     "     1",
                     "31 6  ",
@@ -124,7 +113,7 @@
                     "2     ",
                 ]);
 
-            solution =
+            expectedSolution = new Puzzle.Solution(true,
                 [
                     "625431",
                     "314625",
@@ -132,10 +121,11 @@
                     "452163",
                     "563214",
                     "241356",
-                ];
+                ]);
 
+            solution.Verify(puzzleName, expectedSolution);
 
-            // Seattle Times 8/17/2025
+            puzzleName = "Seattle Times 8/17/2025";
             puzzle = new Puzzle(3, 3);
             puzzle.Solve(
                 [
@@ -150,7 +140,7 @@
                     " 3 62  1 ",
                 ]);
 
-            solution =
+            expectedSolution = new Puzzle.Solution(true,
                 [
                     "913562478",
                     "642378591",
@@ -161,7 +151,9 @@
                     "196785234",
                     "827143965",
                     "534629817",
-                ];
+                ]);
+
+            solution.Verify(puzzleName, expectedSolution);
 
             return 0;
         }

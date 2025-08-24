@@ -76,9 +76,9 @@ namespace sudoku
 
         public delegate E ExceptionCallback<E>(Exception exception);
 
-        public static E? BreakWithDebugger<E>(Func<E?> func, ExceptionCallback<E?> exceptionCallback)
+        public static E BreakWithDebugger<E>(Func<E> func, ExceptionCallback<E> exceptionCallback)
         {
-            E? result = default(E);
+            E result;
             if (Debugger.IsAttached)
             {
                 result = func();

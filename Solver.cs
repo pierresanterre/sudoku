@@ -11,6 +11,160 @@ namespace sudoku
 {
     public partial class Puzzle
     {
+        public class Solution : IEquatable<Solution>
+        {
+            private bool? success;
+            public readonly string exception;
+            public readonly int numDigits;
+            private string[] solutionLines;
+
+            bool Equals(Solution solution)
+            {
+                if (!string.IsNullOrEmpty(exception))
+                {
+                    return false;
+                }
+
+                if (!string.IsNullOrEmpty(solution.exception))
+                {
+                    return false;
+                }
+
+                if (success != solution.success)
+                {
+                    return false;
+                }
+
+                if (numDigits != solution.numDigits)
+                {
+                    return false;
+                }
+
+                if (solution.solutionLines.Length != solutionLines.Length)
+                {
+                    return false;
+                }
+
+                if ((solution.solutionLines.Length != numDigits) || (solutionLines.Length != solution.numDigits))
+                {
+                    throw new Exception("Inconsistent solution size");
+                }
+
+                bool result = true;
+                for (int i = 0; i < numDigits; i++)
+                {
+                    if (string.Compare(solutionLines[i], solution.solutionLines[i], false) != 0)
+                    {
+                        result = false;
+                        break;
+                    }
+                }
+
+                return result;
+            }
+
+            bool IEquatable<Solution>.Equals(Solution? solution)
+            {
+                if (solution == null)
+                {
+                    return false;
+                }
+
+                bool result = Equals(solution);
+                return result;
+            }
+
+            public void Verify(string title, Solution expectedSolution)
+            {
+                bool compared = Equals(expectedSolution);
+                if (compared)
+                {
+                    Console.WriteLine($"{title} has expected solution");
+                }
+                else
+                {
+                    Console.WriteLine($"{title} does not have expected solution. Computed:");
+                    Display();
+                    Console.WriteLine($"Expected:");
+                    expectedSolution.Display();
+                }
+            }
+
+            public void SetSolution(bool? success, string[] solutionLines)
+            {
+                this.success = success;
+                this.solutionLines = solutionLines;
+            }
+
+            public Solution(string exception)
+            {
+                success = null;
+                this.exception = exception;
+                numDigits = 0;
+                solutionLines = Array.Empty<string>();
+            }
+
+            public Solution(bool? success, string[] solutionLines)
+            {
+                this.success = success;
+                exception = string.Empty;
+                numDigits = solutionLines.Length;
+                this.solutionLines = solutionLines;
+            }
+
+            private string[] ToStringLines()
+            {
+                string[] result = new string[numDigits + 1];
+                if (success.HasValue)
+                {
+                    if (success.Value)
+                    {
+                        result[0] = "Success";
+                    }
+                    else
+                    {
+                        result[0] = "Failure";
+                    }
+                }
+                else
+                {
+                    result[0] = "Incomplete";
+                }
+
+                if (!string.IsNullOrEmpty(exception))
+                {
+                    result[0] += $": Exception {exception}";
+                    result = result[0..];
+                }
+                else
+                {
+                    for (int i = 0; i < numDigits; i++)
+                    {
+                        result[i + 1] += solutionLines[i];
+                    }
+                }
+
+                return result;
+            }
+
+            public override string ToString()
+            {
+                string[] lines = ToStringLines();
+                string result = lines.Aggregate((accumulator, item) => accumulator + "|" + item);
+                return result;
+            }
+
+            public void Display()
+            {
+                string[] lines = ToStringLines();
+                foreach (var line in lines)
+                {
+                    Console.WriteLine(line);
+                }
+                // string result = lines.Aggregate((accumulator, item) => accumulator + item);
+            }
+        }
+
         /// <summary>
         /// We are give a cellOrdinal with its now know digit.
         /// 1) Set the digit in the puzzle and display the new puzzle
@@ -114,7 +268,7 @@ namespace sudoku
             }
         }
 
-        private bool SolveWithExceptions(InternalInitialCellDigit[] internalInitialCellDigits)
+        private Solution SolveWithExceptions(InternalInitialCellDigit[] internalInitialCellDigits)
         {
             ui.Log("Starting", ConsoleColor.Green);
             ui.FullUI(cells);
@@ -132,68 +286,73 @@ namespace sudoku
             {
                 Simplify();
             }
+
+            string[] solutionLines = new string[numDigits];
+            int ordinal = 0;
+            for (int y = 0; y < numDigits; y++)
+            {
+                solutionLines[y] = string.Empty;
+                for (int x = 0; x < numDigits; x++)
+                {
+                    Mask mask = cells[ordinal].mask;
+                    if (mask.IsImpossible())
+                    {
+                        solutionLines[y] += "!";
+                    }
+                    else if (mask.IsFixed())
+                    {
+                        Digit digit = mask.FixedDigit();
+                        solutionLines[y] += digit.display;
+                    }
+                    else
+                    {
+                        solutionLines[y] += "?";
+                    }
+                    ordinal++;
+                }
+            }
+
+            Solution solution = new Solution(success, solutionLines);
             if (!success.HasValue)
             {
                 ui.Log("Not solved", ConsoleColor.Red);
-                return false;
             }
             else
             {
-                int ordinal = 0;
                 Console.Write($"Final solution, success={success.Value}");
-                for (int y = 0; y < numDigits; y++)
-                {
-                    Console.WriteLine("");
-                    for (int x = 0; x < numDigits; x++)
-                    {
-                        Mask mask = cells[ordinal].mask;
-                        if (mask.IsImpossible())
-                        {
-                            Console.Write("!");
-                        }
-                        else if (mask.IsFixed())
-                        {
-                            Digit digit = mask.FixedDigit();
-                            Console.Write(digit.display);
-                        }
-                        else
-                        {
-                            Console.Write("?");
-                        }
-                        ordinal++;
-                    }
-                }
-                return success.Value;
+                solution.Display();
             }
+
+            return solution;
         }
 
-        public bool Solve(InitialCellDigit[] initialCellDigits)
+        public Solution Solve(InitialCellDigit[] initialCellDigits)
         {
-            bool result = BreakWithDebugger(() => {
+            Solution solution = BreakWithDebugger<Solution>(() => {
                 InternalInitialCellDigit[] internalInitialCellDigits = initialCellDigits.Select(x => x.ToInternalInitialCellDigit(this)).ToArray();
-                bool exceptionResult = SolveWithExceptions(internalInitialCellDigits);
+                Solution exceptionResult = SolveWithExceptions(internalInitialCellDigits);
                 return exceptionResult;
             }
             , (exception) =>
             {
                 ui.Log($"Exception: {exception.Message}", ConsoleColor.DarkRed);
-                return false;
+                return new Solution(exception.Message);
             });
 
-            return result;
+            return solution;
         }
 
-        public bool Solve(string[] lines)
+        public Solution Solve(string[] lines)
         {
-            bool result = BreakWithDebugger(() => {
+            Solution result = BreakWithDebugger<Solution>(() => {
                 InternalInitialCellDigit[] internalInitialCellDigits = StringsToInternalInitialCellDigits(this, lines);
-                bool exceptionResult = SolveWithExceptions(internalInitialCellDigits);
+                Solution exceptionResult = SolveWithExceptions(internalInitialCellDigits);
                 return exceptionResult;
             }
             , (exception) =>
             {
                 ui.Log($"Exception: {exception.Message}", ConsoleColor.DarkRed);
-                return false;
+                return new Solution(exception.Message);
             });
 
             return result;
