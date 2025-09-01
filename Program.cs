@@ -139,7 +139,6 @@
                     "    4   5",
                     " 3 62  1 ",
                 ]);
-
             expectedSolution = new Puzzle.Solution(true,
                 [
                     "913562478",
@@ -152,7 +151,85 @@
                     "827143965",
                     "534629817",
                 ]);
+            solution.Verify(puzzleName, expectedSolution);
 
+            puzzleName = "Seattle Times 8/24/2025";
+            puzzle = new Puzzle(3, 3);
+            puzzle.Solve(
+                [
+                    "        8",
+                    "8   53   ",
+                    " 5 19  74",
+                    "    2539 ",
+                    "    6    ",
+                    " 1234    ",
+                    "96  14 5 ",
+                    "   53   7",
+                    "         ",
+                ]);
+            expectedSolution = new Puzzle.Solution(true,
+                [
+                    "691472538",
+                    "874653129",
+                    "253198674",
+                    "746823391",
+                    "389761245",
+                    "512349786",
+                    "967214853",
+                    "428536917",
+                    "135987462",
+                ]);
+            solution.Verify(puzzleName, expectedSolution);
+
+            puzzleName = "Seattle Times Comics 8/24/2025";
+            puzzle = new Puzzle(3, 2);
+            solution = puzzle.Solve(
+                [
+                    "  35  ",
+                    "    43",
+                    "   2 6",
+                    "6 1   ",
+                    "16    ",
+                    "  26  ",
+                ]);
+
+            expectedSolution = new Puzzle.Solution(true,
+                [
+                    "413562",
+                    "256143",
+                    "534216",
+                    "621435",
+                    "165324",
+                    "342651",
+                ]);
+            solution.Verify(puzzleName, expectedSolution);
+
+            puzzleName = "Seattle Times 8/31/2025";
+            puzzle = new Puzzle(3, 3);
+            puzzle.Solve(
+                [
+                    " 3 4     ",
+                    " 94      ",
+                    " 6  83   ",
+                    "25  9    ",
+                    " 19 3 84 ",
+                    "    5  69",
+                    "   51  86",
+                    "      12 ",
+                    "     6 3 ",
+                ]);
+            expectedSolution = new Puzzle.Solution(true,
+                [
+                    "832475691",
+                    "794261358",
+                    "165983472",
+                    "258694713",
+                    "619732845",
+                    "347158269",
+                    "423517986",
+                    "586349127",
+                    "971826534",
+                ]);
             solution.Verify(puzzleName, expectedSolution);
 
             return 0;
